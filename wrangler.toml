@@ -1,0 +1,6 @@
+name = "focus-mapping"
+compatibility_date = "2025-12-23"
+
+[assets]
+directory = "."
+

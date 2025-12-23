@@ -1,0 +1,16 @@
+Welcome to Focus Mapping!
+
+Here are some tips to help you navigate:
+
+• Click on control nodes to activate automations
+• Control nodes have special functions like "tidy up", "pretty it up", etc.
+• Regular technique nodes show information when clicked
+• Use filters to find specific techniques
+• Drag nodes to rearrange them
+• Zoom and pan to explore the map
+• Click "tidy up" to organize nodes by their order tags
+• Click "pretty it up" to see a prettier color scheme
+• Use the tips button to toggle this panel
+
+Enjoy exploring your focus techniques!
+

@@ -1,16 +1,41 @@
-Welcome to Focus Mapping!
+### Welcome to Focus Mapping!
 
-Here are some tips to help you navigate:
+### The hardest part is actually starting.
 
-• Click on control nodes to activate automations
-• Control nodes have special functions like "tidy up", "pretty it up", etc.
-• Regular technique nodes show information when clicked
-• Use filters to find specific techniques
-• Drag nodes to rearrange them
-• Zoom and pan to explore the map
-• Click "tidy up" to organize nodes by their order tags
-• Click "pretty it up" to see a prettier color scheme
-• Use the tips button to toggle this panel
+Here are a few things that can help:
+
+* **Clear your space.** A messy desk = a messy head.
+
+* **Make your workspace a place you want to be in.** Good light matters 🙃.
+
+* **Change the environment.** Cafés work for a reason — people around you are also sitting and working.
+
+* **Try the Pomodoro technique.** Short focused sprints are easier than “I’ll work all day.”
+Here is an awesome app for this, where youc an grow trees while working:
+https://apps.apple.com/il/app/forest-focus-for-productivity/id866450515
+
+* **Record yourself in timelapse.** It’s surprisingly motivating (and a bit embarrassing to stop).
+
+---
+
+### What if you can’t focus because there are just *too many* tasks?
+
+That happens a lot. Try this:
+
+* **Unload your brain.** Write *everything* down. Think of it as clearing your brain’s RAM.
+* **Use the Eisenhower Matrix.** Sort tasks by what’s important and what’s urgent.
+* **Try a reversed to-do list.** If a normal to-do list only makes you feel worse, write down what you’ve already done instead.
+
+---
+
+### And honestly?
+
+The best motivator is **your conscience**.
+
+So if you need it — ask us (or just me) to push you, remind you, or check in on your progress.
+Sometimes external pressure is exactly what helps things move.
+
+---
 
 Enjoy exploring your focus techniques!
 

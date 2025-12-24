@@ -798,13 +798,24 @@ function runAway() {
   // Remove all emoji text (👀, 🍅, 💘, etc.)
   nodeGroups.selectAll('text.emoji-node').remove();
   
-  // Restore original colors if they were changed
+  // Restore colors - use pretty color if pretty mode is active, otherwise original color
   nodeGroups.each(function(d) {
-    const originalColor = nodeOriginalColors.get(d.id);
-    if (originalColor) {
-      d.color = originalColor;
-      d3.select(this).select('circle').attr('fill', originalColor);
+    let colorToUse;
+    if (isPrettyMode) {
+      // If pretty mode is active, use pretty color
+      colorToUse = d.prettyColor;
+      d.color = d.prettyColor;
+    } else {
+      // Otherwise restore original color
+      const originalColor = nodeOriginalColors.get(d.id);
+      if (originalColor) {
+        colorToUse = originalColor;
+        d.color = originalColor;
+      } else {
+        colorToUse = d.color;
+      }
     }
+    d3.select(this).select('circle').attr('fill', colorToUse);
   });
 }
 
@@ -950,10 +961,10 @@ function eisenhowerMatrix() {
   const rowHeight = height / 2;
   
   const matrixLabels = [
-    { x: columnWidth / 2, y: rowHeight / 2, text: 'Important\nUrgent' },
-    { x: columnWidth * 1.5, y: rowHeight / 2, text: 'Not Important\nUrgent' },
-    { x: columnWidth / 2, y: rowHeight * 1.5, text: 'Important\nNot Urgent' },
-    { x: columnWidth * 1.5, y: rowHeight * 1.5, text: 'Not Important\nNot Urgent' }
+    { x: columnWidth / 2, y: 0, text: 'Important\nUrgent' },
+    { x: columnWidth * 1.5, y: 0, text: 'Not Important\nUrgent' },
+    { x: columnWidth / 2, y: rowHeight, text: 'Important\nNot Urgent' },
+    { x: columnWidth * 1.5, y: rowHeight, text: 'Not Important\nNot Urgent' }
   ];
   
   // Create matrix cells
@@ -974,13 +985,13 @@ function eisenhowerMatrix() {
       .attr('stroke-width', 2)
       .attr('stroke-opacity', 0.3);
     
-    // Label
+    // Label at the top of each sector
     const phoneScale = getPhoneViewScale();
     const lines = label.text.split('\n');
     lines.forEach((line, lineIndex) => {
       backgroundColumns.append('text')
         .attr('x', label.x)
-        .attr('y', label.y + (lineIndex * 20 * phoneScale))
+        .attr('y', label.y + 20 + (lineIndex * 20 * phoneScale))
         .attr('text-anchor', 'middle')
         .attr('fill', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
         .attr('font-size', `${14 * phoneScale}px`)
@@ -1377,10 +1388,10 @@ function handleResize() {
     if (backgroundColumns) {
       backgroundColumns.selectAll('*').remove();
       const matrixLabels = [
-        { x: columnWidth / 2, y: rowHeight / 2, text: 'Important\nUrgent' },
-        { x: columnWidth * 1.5, y: rowHeight / 2, text: 'Not Important\nUrgent' },
-        { x: columnWidth / 2, y: rowHeight * 1.5, text: 'Important\nNot Urgent' },
-        { x: columnWidth * 1.5, y: rowHeight * 1.5, text: 'Not Important\nNot Urgent' }
+        { x: columnWidth / 2, y: 0, text: 'Important\nUrgent' },
+        { x: columnWidth * 1.5, y: 0, text: 'Not Important\nUrgent' },
+        { x: columnWidth / 2, y: rowHeight, text: 'Important\nNot Urgent' },
+        { x: columnWidth * 1.5, y: rowHeight, text: 'Not Important\nNot Urgent' }
       ];
       
       matrixLabels.forEach((label, i) => {
@@ -1399,12 +1410,13 @@ function handleResize() {
           .attr('stroke-width', 2)
           .attr('stroke-opacity', 0.3);
         
+        // Label at the top of each sector
         const phoneScale = getPhoneViewScale();
         const lines = label.text.split('\n');
         lines.forEach((line, lineIndex) => {
           backgroundColumns.append('text')
             .attr('x', label.x)
-            .attr('y', label.y + (lineIndex * 20 * phoneScale))
+            .attr('y', label.y + 20 + (lineIndex * 20 * phoneScale))
             .attr('text-anchor', 'middle')
             .attr('fill', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
             .attr('font-size', `${14 * phoneScale}px`)

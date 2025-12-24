@@ -1641,12 +1641,10 @@ function resetFilters() {
  */
 async function loadTips() {
   try {
-    const response = await fetch('tips.txt');
+    const response = await fetch('tips.html');
     if (response.ok) {
-      const text = await response.text();
-      document.getElementById('tips-content').innerHTML = text.split('\n').map(line => 
-        line.trim() ? `<p>${escapeHtml(line)}</p>` : '<br>'
-      ).join('');
+      const html = await response.text();
+      document.getElementById('tips-content').innerHTML = html;
     } else {
       document.getElementById('tips-content').innerHTML = '<p>Tips content not available.</p>';
     }

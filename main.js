@@ -25,6 +25,9 @@ let isReversedListMode = false;
 let nodeOriginalColors = new Map();
 let nodeOriginalShapes = new Map();
 
+// Automation history for undo functionality
+let automationHistory = [];
+
 // Initial interface colors (from GUIDE.md)
 const INITIAL_COLORS = {
   background: '#EC0376',
@@ -546,9 +549,326 @@ function handleNodeClick(event, d) {
 }
 
 /**
+ * Save current automation state
+ */
+function saveAutomationState() {
+  return {
+    isTidyMode,
+    isEisenhowerMode,
+    isPrettyMode,
+    isCoworkingMode,
+    isWriteDownMode,
+    isReversedListMode,
+    nodeColors: new Map(nodeOriginalColors),
+    nodeShapes: new Map(nodeOriginalShapes)
+  };
+}
+
+/**
+ * Restore automation state
+ */
+function restoreAutomationState(state) {
+  isTidyMode = state.isTidyMode;
+  isEisenhowerMode = state.isEisenhowerMode;
+  isPrettyMode = state.isPrettyMode;
+  isCoworkingMode = state.isCoworkingMode;
+  isWriteDownMode = state.isWriteDownMode;
+  isReversedListMode = state.isReversedListMode;
+  nodeOriginalColors = new Map(state.nodeColors);
+  nodeOriginalShapes = new Map(state.nodeShapes);
+  
+  // Apply the restored state visually
+  applyRestoredState();
+}
+
+/**
+ * Apply the restored state to the visualization
+ */
+function applyRestoredState() {
+  // Restore colors
+  if (isPrettyMode) {
+    nodeGroups.each(function(d) {
+      d.color = d.prettyColor;
+      d3.select(this).select('circle').attr('fill', d.prettyColor);
+    });
+    document.documentElement.style.setProperty('--bg-color', PRETTY_COLORS.background);
+    document.documentElement.style.setProperty('--text-color', PRETTY_COLORS.text);
+    document.documentElement.style.setProperty('--link-color', PRETTY_COLORS.edges);
+    linkElements.attr('stroke', PRETTY_COLORS.edges);
+    if (window.nodeLabels) {
+      window.nodeLabels.attr('fill', PRETTY_COLORS.text);
+    }
+  } else {
+    nodeGroups.each(function(d) {
+      const originalColor = nodeOriginalColors.get(d.id);
+      if (originalColor) {
+        d.color = originalColor;
+        d3.select(this).select('circle').attr('fill', originalColor);
+      } else {
+        // Restore from node's original color property
+        d.color = d.color || '#E673C8';
+        d3.select(this).select('circle').attr('fill', d.color);
+      }
+    });
+    document.documentElement.style.setProperty('--bg-color', INITIAL_COLORS.background);
+    document.documentElement.style.setProperty('--text-color', INITIAL_COLORS.text);
+    document.documentElement.style.setProperty('--link-color', INITIAL_COLORS.edges);
+    linkElements.attr('stroke', INITIAL_COLORS.edges);
+    if (window.nodeLabels) {
+      window.nodeLabels.attr('fill', INITIAL_COLORS.text);
+    }
+  }
+  
+  // Restore emoji/circles
+  if (isCoworkingMode) {
+    nodeElements.style('display', 'none');
+    // Keep emoji if they exist
+  } else {
+    nodeElements.style('display', 'block');
+    nodeGroups.selectAll('text.emoji-node').remove();
+  }
+  
+  // Restore opacity
+  const baseOpacity = isWriteDownMode ? 1 : 0.7;
+  nodeElements.attr('opacity', baseOpacity);
+  if (window.nodeLabels) {
+    window.nodeLabels.attr('opacity', baseOpacity);
+  }
+  
+  // Restore reversed list colors
+  if (isReversedListMode) {
+    nodeGroups.each(function(d) {
+      const hasDone = d.tag && d.tag.toLowerCase().trim() === 'done';
+      if (hasDone) {
+        d.color = '#03BA6D';
+        d3.select(this).select('circle').attr('fill', '#03BA6D');
+      }
+    });
+  } else {
+    // Restore original colors for done nodes
+    nodeGroups.each(function(d) {
+      const hasDone = d.tag && d.tag.toLowerCase().trim() === 'done';
+      if (hasDone) {
+        const originalColor = nodeOriginalColors.get(d.id);
+        if (originalColor) {
+          d.color = originalColor;
+          d3.select(this).select('circle').attr('fill', originalColor);
+        }
+      }
+    });
+  }
+  
+  // Restore layout - directly apply forces without calling automation functions
+  const container = d3.select('.content').node();
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  
+  if (isEisenhowerMode) {
+    // Show matrix background
+    backgroundColumns.style('display', 'block');
+    backgroundColumns.selectAll('*').remove();
+    
+    const columnWidth = width / 2;
+    const rowHeight = height / 2;
+    
+    const matrixLabels = [
+      { x: columnWidth / 2, y: 0, text: 'Important\nUrgent' },
+      { x: columnWidth * 1.5, y: 0, text: 'Not Important\nUrgent' },
+      { x: columnWidth / 2, y: rowHeight, text: 'Important\nNot Urgent' },
+      { x: columnWidth * 1.5, y: rowHeight, text: 'Not Important\nNot Urgent' }
+    ];
+    
+    matrixLabels.forEach((label, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = col * columnWidth;
+      const y = row * rowHeight;
+      
+      backgroundColumns.append('rect')
+        .attr('x', x)
+        .attr('y', y)
+        .attr('width', columnWidth)
+        .attr('height', rowHeight)
+        .attr('fill', 'none')
+        .attr('stroke', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+        .attr('stroke-width', 2)
+        .attr('stroke-opacity', 0.3);
+      
+      const phoneScale = getPhoneViewScale();
+      const lines = label.text.split('\n');
+      lines.forEach((line, lineIndex) => {
+        backgroundColumns.append('text')
+          .attr('x', label.x)
+          .attr('y', label.y + 20 + (lineIndex * 20 * phoneScale))
+          .attr('text-anchor', 'middle')
+          .attr('fill', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+          .attr('font-size', `${14 * phoneScale}px`)
+          .attr('font-family', 'Lexend-Medium')
+          .attr('pointer-events', 'none')
+          .text(line);
+      });
+    });
+    
+    backgroundColumns.append('line')
+      .attr('x1', columnWidth)
+      .attr('y1', 0)
+      .attr('x2', columnWidth)
+      .attr('y2', height)
+      .attr('stroke', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.3)
+      .attr('pointer-events', 'none');
+    
+    backgroundColumns.append('line')
+      .attr('x1', 0)
+      .attr('y1', rowHeight)
+      .attr('x2', width)
+      .attr('y2', rowHeight)
+      .attr('stroke', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.3)
+      .attr('pointer-events', 'none');
+    
+    // Apply forces
+    simulation.force('x', d3.forceX(d => {
+      if (!d.matrixTag || d.matrixTag.trim() === '') {
+        return width / 2;
+      }
+      const tag = d.matrixTag.toLowerCase();
+      if (tag.includes('urgent') && !tag.includes('not urgent')) {
+        return columnWidth / 2;
+      } else if (tag.includes('not urgent')) {
+        return columnWidth * 1.5;
+      } else {
+        return width / 2;
+      }
+    }).strength(0.8));
+    
+    simulation.force('y', d3.forceY(d => {
+      if (!d.matrixTag || d.matrixTag.trim() === '') {
+        return height / 2;
+      }
+      const tag = d.matrixTag.toLowerCase();
+      if (tag.includes('important') && !tag.includes('not important')) {
+        return rowHeight / 2;
+      } else if (tag.includes('not important')) {
+        return rowHeight * 1.5;
+      } else {
+        return height / 2;
+      }
+    }).strength(0.8));
+  } else if (isTidyMode) {
+    // Show order tag columns
+    backgroundColumns.style('display', 'block');
+    backgroundColumns.selectAll('*').remove();
+    
+    const orderTags = getAllOrderTags();
+    if (orderTags.length > 0) {
+      const orderTagScale = createOrderTagScale(width, orderTags);
+      const columnWidth = width / orderTags.length;
+      
+      orderTags.forEach((tag, i) => {
+        const x = i * columnWidth;
+        const nextX = (i + 1) * columnWidth;
+        const columnCenterX = x + columnWidth / 2;
+        
+        backgroundColumns.append('rect')
+          .attr('x', x)
+          .attr('y', 0)
+          .attr('width', columnWidth)
+          .attr('height', height)
+          .attr('fill', 'none')
+          .attr('stroke', 'none');
+        
+        const phoneScale = getPhoneViewScale();
+        backgroundColumns.append('text')
+          .attr('x', columnCenterX)
+          .attr('y', 20)
+          .attr('text-anchor', 'middle')
+          .attr('fill', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+          .attr('font-size', `${14 * phoneScale}px`)
+          .attr('font-family', 'Lexend-Medium')
+          .attr('pointer-events', 'none')
+          .text(tag);
+        
+        if (i < orderTags.length - 1) {
+          backgroundColumns.append('line')
+            .attr('x1', nextX)
+            .attr('y1', 0)
+            .attr('x2', nextX)
+            .attr('y2', height)
+            .attr('stroke', isPrettyMode ? PRETTY_COLORS.edges : INITIAL_COLORS.edges)
+            .attr('stroke-width', 1 * phoneScale)
+            .attr('stroke-opacity', 0.3)
+            .attr('pointer-events', 'none');
+        }
+      });
+      
+      // Apply forces
+      simulation.force('x', d3.forceX(d => {
+        if (!d.orderTag || d.orderTag.trim() === '') {
+          return width / 2;
+        }
+        return getNodeXPosition(d, orderTagScale);
+      }).strength(0.8));
+      
+      simulation.force('y', d3.forceY(height / 2).strength(0.3));
+    }
+  } else {
+    // Messy mode - hide columns and remove forces
+    backgroundColumns.style('display', 'none');
+    simulation.force('x', null);
+    simulation.force('y', null);
+  }
+  
+  simulation.alpha(0.5).restart();
+  applyFilters();
+}
+
+/**
+ * Undo last automation
+ */
+function undoLastAutomation() {
+  if (automationHistory.length === 0) {
+    return;
+  }
+  
+  const lastState = automationHistory.pop();
+  restoreAutomationState(lastState);
+  
+  // Update back button visibility
+  updateBackButton();
+}
+
+/**
+ * Update back button visibility
+ */
+function updateBackButton() {
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) {
+    if (automationHistory.length > 0) {
+      backBtn.style.display = 'block';
+    } else {
+      backBtn.style.display = 'none';
+    }
+  }
+}
+
+/**
  * Execute automation function
  */
 function executeAutomation(functionName, node) {
+  // Skip saving state for animation (video playback)
+  if (functionName === 'animation') {
+    playAnimation(node.videoUrl);
+    return;
+  }
+  
+  // Save current state before executing
+  const currentState = saveAutomationState();
+  automationHistory.push(currentState);
+  updateBackButton();
+  
   switch(functionName) {
     case 'tidyUp':
       tidyUp();
@@ -579,9 +899,6 @@ function executeAutomation(functionName, node) {
       break;
     case 'ordinaryList':
       ordinaryList();
-      break;
-    case 'animation':
-      playAnimation(node.videoUrl);
       break;
     case 'pomodoro':
       pomodoro(node);
@@ -1606,6 +1923,14 @@ async function init() {
   
   // Video close button
   document.getElementById('close-video').addEventListener('click', closeVideo);
+  
+  // Back button
+  const backBtn = document.getElementById('back-btn');
+  backBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    undoLastAutomation();
+  });
+  updateBackButton(); // Initially hide if no history
   
   // Fullscreen toggle
   const fullscreenBtn = document.getElementById('fullscreen-btn');

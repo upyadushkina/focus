@@ -93,6 +93,11 @@ html, body {
   left: 80px;
 }
 
+#back-btn {
+  right: 120px;
+  display: none; /* Initially hidden, shown when there's history */
+}
+
 #fullscreen-btn {
   right: 16px;
 }
@@ -531,6 +536,18 @@ html, body {
   
   #filters-btn {
     left: 70px;
+  }
+  
+  #back-btn {
+    right: 100px;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  #fullscreen-btn {
+    right: 10px;
+    font-size: 12px;
+    padding: 6px 12px;
   }
 }
 

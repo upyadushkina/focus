@@ -205,11 +205,18 @@ function initVisualization(data) {
   // Create main group for zoom/pan
   g = svg.append('g');
   
+  // Calculate spacing based on scale 6 node radius
+  // For scale 6: radius = 5 + 6 * 3.7 = 27.2 (desktop) or 10 + 6 * 2 = 22 (mobile)
+  // Use desktop calculation: 6 * radius = 6 * 27.2 = 163.2
+  // Round to 165 for cleaner spacing
+  const scale6Radius = 5 + 6 * 3.7;
+  const nodeSpacing = scale6Radius * 6;
+  
   // Create force simulation
   simulation = d3.forceSimulation(data.nodes)
     .force('link', d3.forceLink(data.links)
       .id(d => d.id)
-      .distance(100)
+      .distance(nodeSpacing)
     )
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(width / 2, height / 2));
